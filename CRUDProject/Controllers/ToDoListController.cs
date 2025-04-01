@@ -34,7 +34,6 @@ namespace CRUDProject.Controllers
 		{
 			return View();
 		}
-
 		// POST: ToDoListController/Create
 		[HttpPost]
 		[ValidateAntiForgeryToken]
