@@ -1,10 +1,159 @@
-﻿@model IEnumerable<CRUDProject.Models.ToDoList>
-@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-    
-*@
+﻿@model CRUDProject.Models.ToDoListViewModel
 @{
-    ViewData["Title"] = "To-Do-List";
+    ViewData["Title"] = "Table Task";
 }
 
-<h1>To Do List (TDL)</h1>
+<div class="container py-5">
+    <div class="card shadow-lg border-0">
+        <div class="card-header bg-primary text-white">
+            <h1 class="mb-0 fw-bold">Mission Plan</h1>
+        </div>
+
+        <div class="card-body p-4">
+            <!-- Form Section -->
+            <form method="POST" asp-controller="ToDoList" asp-action="Create" class="mb-4">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="Task" class="form-label fw-semibold">Task</label>
+                        <input asp-for="Task" type="text" class="form-control shadow-sm"
+                               placeholder="Enter task name" maxlength="40" />
+                        <small class="char-count text-muted">0/40</small>
+                        <span asp-validation-for="Task" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Description" class="form-label fw-semibold">Description</label>
+                        <textarea asp-for="Description" class="form-control shadow-sm"
+                                  rows="3" placeholder="Enter description" maxlength="200"></textarea>
+                        <small class="char-count text-muted">0/200</small>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary btn-lg shadow-sm">
+                            <i class="bi bi-plus-circle me-2"></i>Add Task
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Table Section -->
+            @if (Model.ToDoLists.Any() && Model.ToDoLists != null)
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <td style="width:100px;">Status</td>
+                                <th>Task</th>
+                                <th>Description</th>
+                                <th>Created</th>
+                                <th>Updated</th>
+                                <th>Edit</th>
+                                <th>Delete</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var list in Model.ToDoLists)
+                            {
+                                <tr>
+                                    <td>
+                                        <a class="btn btn-sm custom-toggle-btn @(list.Status == "Pending" ? "btn-outline-warning btn-gray-cus" : "btn-success btn-w-cus")"
+                                           asp-controller="ToDoList"
+                                           asp-action="ToggleStatus"
+                                           asp-route-id="@list.Id"
+                                           title="@(list.Status == "Pending" ? "Mark as Completed" : "Mark as Pending")">
+                                            <i class="bi @(list.Status == "Pending" ? "bi-circle" : "bi-check-circle-fill") me-1"></i>
+                                            <span class="d-none d-md-inline">@(list.Status == "Pending" ? "Pending" : "Done")</span>
+                                        </a>
+                                    </td>
+                                    <td>@(list.Task.Length > 10 ? list.Task.Substring(0, 10) + "..." : list.Task)</td>
+                                    <td>@(list.Description.Length > 10 ? list.Description.Substring(0, 10) + "..." : list.Description)</td>
+                                    <td>@list.CreatedAt.ToString("dd MMM yyyy")</td>
+                                    <td>@list.UpdatedAt?.ToString("dd MMM yyyy")</td>
+                                    <td>
+                                        <a asp-controller="ToDoList" asp-action="Edit" asp-route-id="@list.Id"
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil-square"></i> Edit
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a asp-controller="ToDoList" asp-action="Delete" asp-route-id="@list.Id"
+                                           class="btn btn-sm btn-outline-danger" onclick="return confirm('Do you want to cancel @list.Task Task ?');">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning text-center p-4 mt-4 shadow-sm rounded-3">
+                    <i class="bi bi-exclamation-triangle display-4 text-warning"></i>
+                    <h4 class="fw-bold mt-3">ไม่มีข้อมูล</h4>
+                    <p class="text-muted">ยังไม่มีรายการใน To-Do List ของคุณ</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Optional Custom CSS -->
+<style>
+
+    .card {
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    .table th {
+        background-color: #343a40;
+        color: white;
+    }
+
+    .btn {
+        transition: all 0.3s ease;
+    }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+    }
+
+    .btn-gray-cus{
+        background-color:#333;
+        width:100%;
+    }
+
+    .btn-w-cus{
+        width:100%;
+    }
+</style>
+
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // นับตัวอักษรใน Task
+            $('#Task').on('input', function() {
+                let length = $(this).val().length;
+                let max = 40;
+                $(this).next('.char-count').text(`${length}/${max}`);
+            });
+
+            // นับตัวอักษรใน Description
+            $('#Description').on('input', function() {
+                let length = $(this).val().length;
+                let max = 200;
+                $(this).next('.char-count').text(`${length}/${max}`);
+            });
+        });
+    </script>
+}

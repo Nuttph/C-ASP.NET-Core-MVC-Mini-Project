@@ -1,4 +1,5 @@
 ﻿using CRUDProject.Data;
+using CRUDProject.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,77 +19,97 @@ namespace CRUDProject.Controllers
 		// GET: ToDoListController
 		public ActionResult Index()
 		{
-			return View();
-		}
+			//IEnumerable<ToDoList> obj = _db.ToDoLists;
+			var model = new ToDoListViewModel()
+			{
+				ToDoLists = _db.ToDoLists.OrderByDescending(t => t.CreatedAt).ToList()
+			};
 
-
-
-		// GET: ToDoListController/Details/5
-		public ActionResult Details(int id)
-		{
-			return View();
-		}
-
-		// GET: ToDoListController/Create
-		public ActionResult Create()
-		{
-			return View();
+			return View(model);
 		}
 		// POST: ToDoListController/Create
+
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public ActionResult Create(IFormCollection collection)
+		public ActionResult Create(ToDoList obj)
 		{
-			try
+			if (ModelState.IsValid)
 			{
-				return RedirectToAction(nameof(Index));
+				_db.ToDoLists.Add(obj);
+				_db.SaveChanges();
+				return RedirectToAction("Index");
 			}
-			catch
+			var viewModel = new ToDoListViewModel
 			{
-				return View();
-			}
+				ToDoLists = _db.ToDoLists.ToList(), // โหลดข้อมูลล่าสุด
+				Task = obj.Task,                    // คงค่า Task ที่ผู้ใช้กรอก
+				Description = obj.Description       // คงค่า Description ที่ผู้ใช้กรอก
+			};
+			return View("Index", viewModel); // คืนค่า view เดิมพร้อม error
 		}
 
 		// GET: ToDoListController/Edit/5
-		public ActionResult Edit(int id)
+
+		public IActionResult Edit(int? id)
 		{
-			return View();
+			if(id == null || id == 0)
+			{
+				return NotFound();
+			}
+			var obj = _db.ToDoLists.Find(id);
+			if(obj == null)
+			{
+				return NotFound();
+			}
+
+			return View(obj);
 		}
 
-		// POST: ToDoListController/Edit/5
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public ActionResult Edit(int id, IFormCollection collection)
+		public ActionResult Edit(ToDoList obj)
 		{
-			try
+			if (ModelState.IsValid)
 			{
-				return RedirectToAction(nameof(Index));
+				_db.ToDoLists.Update(obj);
+				_db.SaveChanges();
+				return RedirectToAction("Index");
 			}
-			catch
-			{
-				return View();
-			}
+			return View(obj);
 		}
 
-		// GET: ToDoListController/Delete/5
-		public ActionResult Delete(int id)
+		public IActionResult Delete(int? id)
 		{
-			return View();
+			if(id == 0 || id == null)
+			{
+				return NotFound();
+			}
+			var obj = _db.ToDoLists.Find(id);
+			if(obj == null)
+			{
+				return NotFound();
+			}
+			_db.ToDoLists.Remove(obj);
+			_db.SaveChanges();
+			return RedirectToAction("Index");
 		}
 
-		// POST: ToDoListController/Delete/5
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public ActionResult Delete(int id, IFormCollection collection)
+		public IActionResult ToggleStatus(int? id)
 		{
-			try
+			if(id == 0||id == null)
 			{
-				return RedirectToAction(nameof(Index));
+				return NotFound();
 			}
-			catch
+			var obj = _db.ToDoLists.Find(id);
+			if(obj != null)
 			{
-				return View();
+				obj.Status = obj.Status == "Pending" ? "Completed" : "Pending";
+				obj.UpdatedAt = DateTime.Now;
+				_db.SaveChanges();
+				return RedirectToAction("Index");
 			}
+			
+			return RedirectToAction("Index");
 		}
 	}
 }
