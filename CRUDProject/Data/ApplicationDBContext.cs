@@ -9,17 +9,30 @@ namespace CRUDProject.Data
 
 		public DbSet<ToDoList> ToDoLists { get; set; }
 
+		protected override void OnModelCreating(ModelBuilder modelBuilder)
+		{
+			modelBuilder.Entity<ToDoList>()
+				.Property(t => t.CreatedAt)
+				.HasDefaultValueSql("GETUTCDATE()");
+
+			modelBuilder.Entity<ToDoList>()
+				.Property(t => t.UpdatedAt)
+				.IsRequired(false); // ✅ อนุญาตให้เป็น NULL
+		}
+
+
 		public override int SaveChanges()
 		{
 			foreach (var entry in ChangeTracker.Entries<ToDoList>())
 			{
 				if (entry.State == EntityState.Added)
 				{
-					entry.Entity.CreatedAt = DateTime.UtcNow; // ตั้งค่า CreatedAt ตอนเพิ่มใหม่
+					entry.Entity.CreatedAt = DateTime.UtcNow;
+					entry.Entity.UpdatedAt = DateTime.UtcNow;
 				}
 				else if (entry.State == EntityState.Modified)
 				{
-					entry.Entity.UpdatedAt = DateTime.UtcNow; // ตั้งค่า UpdatedAt ตอนแก้ไข
+					entry.Entity.UpdatedAt = DateTime.UtcNow;
 				}
 			}
 			return base.SaveChanges();
